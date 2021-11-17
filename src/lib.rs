@@ -1,19 +1,42 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-//use near_sdk::collections::{LookupMap, UnorderedSet};
-use near_sdk::AccountId;
-use near_sdk::{env, near_bindgen};
-use std::collections::HashMap;
+use near_sdk::collections::LookupMap;
+//use near_sdk::AccountId;
+//use near_sdk::{env, near_bindgen};
+use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 near_sdk::setup_alloc!();
 
 #[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+//#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    pub status_updates: HashMap<AccountId, String>,
+    //pub status_updates: HashMap<AccountId, String>,
+    pub status_updates: LookupMap<String, AccountId>,
 }
 
 #[near_bindgen]
 impl Contract {
+    #[init]
+    pub fn new() -> Self {
+        // Initializing `status_updates` with unique key prefix.
+        Self {
+            status_updates: LookupMap::new(b"s".to_vec()),
+        }
+    }
+
+    pub fn set_status(&mut self, status: String) {
+        self.status_updates
+            .insert(&env::predecessor_account_id(), &status);
+        // Note, don't need to check size, since `UnorderedMap` doesn't store all data in memory.
+    }
+
+    pub fn delete_status(&mut self) {
+        self.status_updates.remove(&env::predecessor_account_id());
+    }
+
+    pub fn get_status(&self, account_id: AccountId) -> Option<String> {
+        self.status_updates.get(&account_id)
+    }
     //pub fn hello_world(&self) -> &str {
     //return "Hello world";
     //}
@@ -23,21 +46,6 @@ impl Contract {
     //return "Hello ".to_owned() + &account_id.to_string();
     //}
     //guardar
-
-    pub fn set_status(&mut self, status: String) {
-        self.status_updates
-            .insert(env::predecessor_account_id(), status);
-        assert!(self.status_updates.len() <= 10, "Too many messages");
-    }
-
-    pub fn clear(&mut self) {
-        // Effectively iterating through all removing them.
-        self.status_updates.clear();
-    }
-
-    pub fn get_all_updates(self) -> HashMap<AccountId, String> {
-        self.status_updates
-    }
 }
 
 #[cfg(test)]
