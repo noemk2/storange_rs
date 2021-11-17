@@ -1,5 +1,5 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::LookupMap;
+use near_sdk::collections::UnorderedMap;
 //use near_sdk::AccountId;
 //use near_sdk::{env, near_bindgen};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -11,7 +11,7 @@ near_sdk::setup_alloc!();
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     //pub status_updates: HashMap<AccountId, String>,
-    pub status_updates: LookupMap<String, AccountId>,
+    pub status_updates: UnorderedMap<String, AccountId>,
 }
 
 #[near_bindgen]
@@ -20,7 +20,7 @@ impl Contract {
     pub fn new() -> Self {
         // Initializing `status_updates` with unique key prefix.
         Self {
-            status_updates: LookupMap::new(b"s".to_vec()),
+            status_updates: UnorderedMap::new(b"s".to_vec()),
         }
     }
 
@@ -45,7 +45,17 @@ impl Contract {
     //let account_id = env::signer_account_id();
     //return "Hello ".to_owned() + &account_id.to_string();
     //}
-    //guardar
+    //pagination
+    // Retrieves multiple elements from the `UnorderedMap`.
+    // - `from_index` is the index to start from.
+    // - `limit` is the maximum number of elements to return.
+    pub fn get_updates(&self, from_index: u64, limit: u64) -> Vec<(AccountId, String)> {
+        let keys = self.status_updates.keys_as_vector();
+        let values = self.status_updates.values_as_vector();
+        (from_index..std::cmp::min(from_index + limit, self.status_updates.len()))
+            .map(|index| (keys.get(index).unwrap(), values.get(index).unwrap()))
+            .collect()
+    }
 }
 
 #[cfg(test)]
