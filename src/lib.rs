@@ -56,6 +56,10 @@ impl Contract {
             .map(|index| (keys.get(index).unwrap(), values.get(index).unwrap()))
             .collect()
     }
+    #[result_serializer(borsh)]
+    pub fn sum_borsh(#[serializer(borsh)] a: u32, #[serializer(borsh)] b: u32) -> u32 {
+        a + b
+    }
 }
 
 #[cfg(test)]
